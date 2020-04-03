@@ -6,12 +6,13 @@ require "active_support/dependencies"
 module ActionDispatch
   class MiddlewareStack
     class Middleware
-      attr_reader :args, :block, :klass
+      attr_reader :args, :kwargs, :block, :klass
 
-      def initialize(klass, args, block)
-        @klass = klass
-        @args  = args
-        @block = block
+      def initialize(klass, *args, **kwargs, &block)
+        @klass  = klass
+        @args   = args
+        @kwargs = kwargs
+        @block  = block
       end
 
       def name; klass.name; end
@@ -34,7 +35,11 @@ module ActionDispatch
       end
 
       def build(app)
-        klass.new(app, *args, &block)
+        if kwargs.empty?
+          klass.new(app, *args, &block)
+        else
+          klass.new(app, *args, **kwargs, &block)
+        end
       end
 
       def build_instrumented(app)
@@ -67,7 +72,7 @@ module ActionDispatch
 
     attr_accessor :middlewares
 
-    def initialize(*args)
+    def initialize
       @middlewares = []
       yield(self) if block_given?
     end
@@ -88,8 +93,8 @@ module ActionDispatch
       middlewares[i]
     end
 
-    def unshift(klass, *args, &block)
-      middlewares.unshift(build_middleware(klass, args, block))
+    def unshift(klass, *args, **kwargs, &block)
+      middlewares.unshift(build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:unshift) if respond_to?(:ruby2_keywords, true)
 
@@ -97,23 +102,23 @@ module ActionDispatch
       self.middlewares = other.middlewares.dup
     end
 
-    def insert(index, klass, *args, &block)
+    def insert(index, klass, *args, **kwargs, &block)
       index = assert_index(index, :before)
-      middlewares.insert(index, build_middleware(klass, args, block))
+      middlewares.insert(index, build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:insert) if respond_to?(:ruby2_keywords, true)
 
     alias_method :insert_before, :insert
 
-    def insert_after(index, *args, &block)
+    def insert_after(index, *args, **kwargs, &block)
       index = assert_index(index, :after)
-      insert(index + 1, *args, &block)
+      insert(index + 1, *args, **kwargs, &block)
     end
     ruby2_keywords(:insert_after) if respond_to?(:ruby2_keywords, true)
 
-    def swap(target, *args, &block)
+    def swap(target, *args, **kwargs, &block)
       index = assert_index(target, :before)
-      insert(index, *args, &block)
+      insert(index, *args, **kwargs, &block)
       middlewares.delete_at(index + 1)
     end
     ruby2_keywords(:swap) if respond_to?(:ruby2_keywords, true)
@@ -140,8 +145,8 @@ module ActionDispatch
       middlewares.insert(target_index + 1, source_middleware)
     end
 
-    def use(klass, *args, &block)
-      middlewares.push(build_middleware(klass, args, block))
+    def use(klass, *args, **kwargs, &block)
+      middlewares.push(build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:use) if respond_to?(:ruby2_keywords, true)
 
@@ -163,8 +168,8 @@ module ActionDispatch
         i
       end
 
-      def build_middleware(klass, args, block)
-        Middleware.new(klass, args, block)
+      def build_middleware(klass, *args, **kwargs, &block)
+        Middleware.new(klass, *args, **kwargs, &block)
       end
   end
 end

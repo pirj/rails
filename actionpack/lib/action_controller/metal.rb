@@ -39,7 +39,7 @@ module ActionController
       EXCLUDE = ->(list, action) { !list.include? action }
       NULL    = ->(list, action) { true }
 
-      def build_middleware(klass, args, block)
+      def build_middleware(klass, *args, **kwargs, &block)
         options = args.extract_options!
         only   = Array(options.delete(:only)).map(&:to_s)
         except = Array(options.delete(:except)).map(&:to_s)
@@ -219,8 +219,8 @@ module ActionController
     class << self
       # Pushes the given Rack middleware and its arguments to the bottom of the
       # middleware stack.
-      def use(*args, &block)
-        middleware_stack.use(*args, &block)
+      def use(*args, **kwargs, &block)
+        middleware_stack.use(*args, **kwargs, &block)
       end
       ruby2_keywords(:use) if respond_to?(:ruby2_keywords, true)
     end

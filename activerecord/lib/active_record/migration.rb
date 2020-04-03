@@ -632,8 +632,12 @@ module ActiveRecord
         end
       end
 
-      def method_missing(name, *args, &block) #:nodoc:
-        nearest_delegate.send(name, *args, &block)
+      def method_missing(name, *args, **kwargs, &block) #:nodoc:
+        if kwargs.empty?
+          nearest_delegate.send(name, *args, &block)
+        else
+          nearest_delegate.send(name, *args, **kwargs, &block)
+        end
       end
       ruby2_keywords(:method_missing) if respond_to?(:ruby2_keywords, true)
 
