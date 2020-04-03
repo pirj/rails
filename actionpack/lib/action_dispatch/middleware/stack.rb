@@ -94,7 +94,7 @@ module ActionDispatch
     end
 
     def unshift(klass, *args, **kwargs, &block)
-      middlewares.unshift(Middleware.new(klass, *args, **kwargs, &block))
+      middlewares.unshift(build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:unshift) if respond_to?(:ruby2_keywords, true)
 
@@ -104,7 +104,7 @@ module ActionDispatch
 
     def insert(index, klass, *args, **kwargs, &block)
       index = assert_index(index, :before)
-      middlewares.insert(index, Middleware.new(klass, *args, **kwargs, &block))
+      middlewares.insert(index, build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:insert) if respond_to?(:ruby2_keywords, true)
 
@@ -146,7 +146,7 @@ module ActionDispatch
     end
 
     def use(klass, *args, **kwargs, &block)
-      middlewares.push(Middleware.new(klass, *args, **kwargs, &block))
+      middlewares.push(build_middleware(klass, *args, **kwargs, &block))
     end
     ruby2_keywords(:use) if respond_to?(:ruby2_keywords, true)
 
@@ -166,6 +166,10 @@ module ActionDispatch
         i = index.is_a?(Integer) ? index : middlewares.index { |m| m.klass == index }
         raise "No such middleware to insert #{where}: #{index.inspect}" unless i
         i
+      end
+
+      def build_middleware(klass, *args, **kwargs, &block)
+        Middleware.new(klass, *args, **kwargs, &block)
       end
   end
 end
